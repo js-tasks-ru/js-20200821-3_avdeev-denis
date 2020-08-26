@@ -5,13 +5,17 @@
  * @returns {object} - returns the new object
  */
 export const omit = (obj, ...fields) => {
-    const newObject = Object.assign({}, obj);
+    const fieldsObj = fields.reduce((result, current) => {
+        result[current] = true;
 
-    return fields.reduce((result, field) => {
-        if (result[field]) {
-            delete result[field];
-        }
-        
         return result;
-    }, newObject);
+    }, {});
+
+    return Object.entries(obj).reduce((result, [field, value]) => {
+        if (!fieldsObj[field]) {
+            result[field] = value;
+        }
+
+        return result;
+    }, {});
 };
