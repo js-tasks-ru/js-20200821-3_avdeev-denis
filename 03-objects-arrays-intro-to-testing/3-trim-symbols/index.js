@@ -4,14 +4,18 @@
  * @param {number} size - the allowed size of consecutive identical symbols
  * @returns {string} - the new string without extra symbols according passed size
  */
-export function trimSymbols(string, size = Infinity) {
+export function trimSymbols(string, size) {
     if (!string.length || size === 0) return '';
 
-    let sequenceSize = 1,
-        current = string[0];
+    if (!size) {
+        return string;
+    }
 
-    let prev = current,
-        result = current;
+    let sequenceSize = 1;
+    let current = string[0];
+
+    let prev = current;
+    let result = current;
 
     for (let i = 1; i < string.length; i++) {
         let current = string[i];
