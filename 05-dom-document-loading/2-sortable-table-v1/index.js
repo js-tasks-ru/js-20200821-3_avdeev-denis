@@ -81,12 +81,20 @@ export default class SortableTable {
                         ${this.getTableCellTemplate(title)}
 
                         ${this.getTableCellTemplate(quantity)}
-                        ${this.getTableCellTemplate(price)}
+                        ${this.getPriceTemplate(price)}
                         ${this.getTableCellTemplate(sales)}
                     </a>
                 `;
             })
             .join('');
+    }
+
+    getPriceTemplate(price) {
+        if (!price) return '';
+
+        return `
+            <div class="sortable-table__cell sortable-table__cell_type_price">${price}</div>
+        `;
     }
 
     getTableCellTemplate(value) {

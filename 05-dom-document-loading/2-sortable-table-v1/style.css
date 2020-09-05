@@ -53,6 +53,10 @@ body {
   border-top: 1px solid var(--grey-light);
 }
 
+.sortable-table__cell_type_price::before {
+  content: '$';
+}
+
 .sortable-table__cell:first-child {
   padding-left: 32px;
 }
