@@ -1,6 +1,8 @@
 export default class NotificationMessage {
     element;
 
+    timer;
+
     static isShowed = false; // показано ли в данный момент оповещение
     
     constructor(body, { duration = 2000, type = 'success' } = {}) {
@@ -15,13 +17,17 @@ export default class NotificationMessage {
     setNotificationShowed() {
         NotificationMessage.isShowed = true;
     }
-    
+
     setNotificationHidden() {
         NotificationMessage.isShowed = false;
     }
     
     show(target) {
-        if (NotificationMessage.isShowed) return;
+        if (NotificationMessage.isShowed) {
+            clearTimeout(this.timer);
+
+            this.remove();
+        }
 
         this.setNotificationShowed();
         
@@ -31,7 +37,7 @@ export default class NotificationMessage {
     showTimeouted(target) {
         target?.append(this.element);
 
-        setTimeout(() => {
+        this.timer = setTimeout(() => {
             this.remove();
 
             this.setNotificationHidden();

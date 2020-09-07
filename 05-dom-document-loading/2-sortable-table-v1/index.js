@@ -1,8 +1,8 @@
 export default class SortableTable {
     element;
 
-    ACTIVE_SORT_FIELD = null; // ID поля, которое отсортировано в данный момент
-    ACTIVE_SORT_ORDER = null; // Порядок сортировки поля в данный момент
+    ACTIVE_SORT_FIELD = ''; // ID поля, которое отсортировано в данный момент
+    ACTIVE_SORT_ORDER = ''; // Порядок сортировки поля в данный момент
 
     constructor(header, { data }) {
         this.header = header;
@@ -116,7 +116,10 @@ export default class SortableTable {
 
     sort(field, order) {
         // Если передали те же самые параметры сортировки - не сортируем одно и то же много раз подряд
-        if (this.matchesWithPrevious(field, order)) {
+        if (
+            field === this.ACTIVE_SORT_FIELD &&
+            order === this.ACTIVE_SORT_ORDER
+        ) {
             return;
         }
 
@@ -128,10 +131,10 @@ export default class SortableTable {
             `);
         }
 
-        this.saveActiveSortParams(field, order);
+        this.ACTIVE_SORT_FIELD = field;
+        this.ACTIVE_SORT_ORDER = order;
 
-        const direction = this.getDirection(order);
-        const compareFn = this.getCompareFunction(sortType, { field, direction });
+        const compareFn = this.getCompareFunction(sortType, { field, order });
 
         if (!compareFn) return;
 
@@ -163,10 +166,15 @@ export default class SortableTable {
     }
 
     compareStringsFn(a, b) {
-        return new Intl.Collator(['ru', 'en'], { caseFirst: 'upper' }).compare(a, b);
+        return a.localeCompare(b, ['ru', 'en'], { caseFirst: 'upper' });
     }
 
-    getCompareFunction(sortType, { field, direction }) {
+    getCompareFunction(sortType, { field, order = 'asc' }) {
+        const direction = {
+            asc: 1,
+            desc: -1
+        }[order];
+
         switch (sortType) {
             case 'string':
                 return (a, b) => direction * this.compareStringsFn(a[field], b[field]);
@@ -178,34 +186,6 @@ export default class SortableTable {
                 console.error('Пока умеем сортировать только строки и числа');
                 return null;
         }
-    }
-
-    getDirection(order) {
-        let direction;
-
-        switch (order) {
-            default:
-            case 'asc':
-                direction = 1;
-                break;
-            case 'desc':
-                direction = -1;
-                break;
-        }
-
-        return direction;
-    }
-
-    saveActiveSortParams(field, order) {
-        this.ACTIVE_SORT_FIELD = field;
-        this.ACTIVE_SORT_ORDER = order;
-    }
-
-    matchesWithPrevious(field, order) {
-        return (
-            field === this.ACTIVE_SORT_FIELD &&
-            order === this.ACTIVE_SORT_ORDER
-        );
     }
 
     getSubElements(element) {
