@@ -2,15 +2,15 @@ export default class DoubleSlider {
     element;
     subElements;
 
-    SIZE_PARAMS;
+    sizeParams;
 
-    MOVING_CONTROL = null;
+    movingControl = null;
 
-    SLIDER_LEFT = 0;
-    SLIDER_RIGHT = 0;
+    sliderLeft = 0;
+    sliderRight = 0;
 
-    CURRENT_FROM_VALUE = 0;
-    CURRENT_TO_VALUE = 0;
+    currentFrom = 0;
+    currentTo = 0;
 
     constructor({
         min = 0,
@@ -24,14 +24,9 @@ export default class DoubleSlider {
         this.formatValue = formatValue;
         this.selected = selected;
 
-        // this.onPointerMove = throttle(this.onPointerMove.bind(this), 300);
-        this.onPointerMove = this.onPointerMove.bind(this);
-        this.onPointerUp = this.onPointerUp.bind(this);
-        this.onPointerDown = this.onPointerDown.bind(this);
-
         this.render();
 
-        this.SIZE_PARAMS = this.getElementSizeParams();
+        this.sizeParams = this.getElementSizeParams();
 
         this.initEventListeners();
     }
@@ -48,32 +43,32 @@ export default class DoubleSlider {
     initEventListeners() {
         document.addEventListener('pointerdown', this.onPointerDown);
         document.addEventListener('pointerup', this.onPointerUp);
-        document.addEventListener('pointermove', this.onPointerMove);
     }
 
     removeEventListeners() {
         document.removeEventListener('pointerdown', this.onPointerDown);
         document.removeEventListener('pointerup', this.onPointerUp);
-        document.removeEventListener('pointermove', this.onPointerMove);
     }
 
-    onPointerDown({ target }) {
+    onPointerDown = ({ target }) => {
+        document.addEventListener('pointermove', this.onPointerMove);
+
         const { 'left-control': leftControl, 'right-control': rightControl } = this.subElements;
 
         if (target === leftControl || target === rightControl) {
-            this.MOVING_CONTROL = target;
+            this.movingControl = target;
         } else {
-            this.MOVING_CONTROL = null;
+            this.movingControl = null;
         }
     }
 
-    onPointerMove({ clientX }) {
-        if (!this.MOVING_CONTROL) return;
+    onPointerMove = ({ clientX }) => {
+        if (!this.movingControl) return;
 
-        const controlName = this.MOVING_CONTROL.dataset.element;
-        const controlWidth = this.SIZE_PARAMS.controlWidth / 2;
+        const controlName = this.movingControl.dataset.element;
+        const controlWidth = this.sizeParams.controlWidth / 2;
 
-        const { left: sliderLeft, width: sliderWidth } = this.SIZE_PARAMS.inner;
+        const { left: sliderLeft, width: sliderWidth } = this.sizeParams.inner;
 
         let offset;
         switch (controlName) {
@@ -97,7 +92,7 @@ export default class DoubleSlider {
 
         if (controlName === 'left-control') {
             // Не даем уйти левому контролу за правый
-            offset = Math.min(offset, 100 - this.SLIDER_RIGHT);
+            offset = Math.min(offset, 100 - this.sliderRight);
 
             this.subElements['left-control'].style.left = `${offset}%`;
             this.subElements.progress.style.left = `${offset}%`;
@@ -105,12 +100,12 @@ export default class DoubleSlider {
             const minValue = offset * (this.max - this.min) / 100 + this.min;
             this.subElements.from.innerHTML = this.processValue(minValue);
 
-            this.CURRENT_FROM_VALUE = minValue;
-            this.SLIDER_LEFT = offset;
+            this.currentFrom = minValue;
+            this.sliderLeft = offset;
 
         } else if (controlName === 'right-control') {
             // Не даем уйти правому контролу за левый
-            offset = Math.max(offset, this.SLIDER_LEFT)
+            offset = Math.max(offset, this.sliderLeft)
 
             // В процентном соотношении
             offset = 100 - offset;
@@ -121,19 +116,21 @@ export default class DoubleSlider {
             const maxValue = this.max - offset * (this.max - this.min) / 100;
             this.subElements.to.innerHTML = this.processValue(maxValue);
 
-            this.CURRENT_TO_VALUE = maxValue;
-            this.SLIDER_RIGHT = offset;
+            this.currentTo = maxValue;
+            this.sliderRight = offset;
         }
     }
 
-    onPointerUp() {
-        this.MOVING_CONTROL = null;
+    onPointerUp = () => {
+        document.removeEventListener('pointermove', this.onPointerMove);
+
+        this.movingControl = null;
 
         const event = new CustomEvent('range-select', {
             bubbles: true,
             detail: {
-                from: this.CURRENT_FROM_VALUE,
-                to: this.CURRENT_TO_VALUE
+                from: this.currentFrom,
+                to: this.currentTo
             }
         });
 
@@ -158,8 +155,8 @@ export default class DoubleSlider {
         const min = this.selected?.from || this.min;
         const max = this.selected?.to || this.max;
 
-        this.CURRENT_FROM_VALUE = min;
-        this.CURRENT_TO_VALUE = max;
+        this.currentFrom = min;
+        this.currentTo = max;
 
         const { progressStyle, leftStyle, rightStyle } = this.getDefaultStyles();
 
@@ -192,8 +189,8 @@ export default class DoubleSlider {
         const left = (from - this.min) * 100 / diff;
         const right = (this.max - to) * 100 / diff;
 
-        this.SLIDER_LEFT = left;
-        this.SLIDER_RIGHT = right;
+        this.sliderLeft = left;
+        this.sliderRight = right;
 
         return {
             progressStyle: `style="left: ${left}%; right: ${right}%;"`,
