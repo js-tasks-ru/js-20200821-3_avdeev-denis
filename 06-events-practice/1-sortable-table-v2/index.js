@@ -1,16 +1,16 @@
 export default class SortableTable {
     element;
 
-    ACTIVE_SORT_FIELD = ''; // ID поля, которое отсортировано в данный момент
-    ACTIVE_SORT_ORDER = ''; // Порядок сортировки поля в данный момент
+    activeSortField = ''; // ID поля, которое отсортировано в данный момент
+    activeSortOrder = ''; // Порядок сортировки поля в данный момент
 
     constructor(header, { data, defaultField = 'title', defaultOrder = 'asc' }) {
         this.header = header;
 
         this.data = data;
 
-        this.ACTIVE_SORT_FIELD = defaultField;
-        this.ACTIVE_SORT_ORDER = defaultOrder;
+        this.activeSortField = defaultField;
+        this.activeSortOrder = defaultOrder;
 
         this.onHeaderColClick = this.onHeaderColClick.bind(this);
 
@@ -32,7 +32,7 @@ export default class SortableTable {
     }
 
     initHeaderColsClickListeners() {
-        let headerCols = this.subElements.header.querySelectorAll('.sortable-table__cell[data-sortable="true"]');
+        const headerCols = this.subElements.header.querySelectorAll('.sortable-table__cell[data-sortable="true"]');
 
         if (!headerCols.length) return;
 
@@ -44,19 +44,20 @@ export default class SortableTable {
     onHeaderColClick(e) {
         const { id, order } = e.currentTarget.dataset;
 
-        const inverseOrder = {
+        const toggleOrder = {
             desc: 'asc',
             asc: 'desc'
-        }[order];
+        };
 
+        const newOrder = toggleOrder[order];
         const arrowElement = e.currentTarget.querySelector(`.${this.subElements.arrow.className}`);
 
         if (!arrowElement) {
             e.currentTarget.append(this.subElements.arrow);
         }
 
-        e.currentTarget.dataset.order = inverseOrder;
-        this.sortAndRender(id, inverseOrder);
+        e.currentTarget.dataset.order = newOrder;
+        this.sortAndRender(id, newOrder);
     }
 
     getHTMLFromTemplate(template) {
@@ -82,11 +83,11 @@ export default class SortableTable {
     getHeaderTemplateData() {
         return this.header
             .map(({ id, title, sortable }, index) => {
-                const isActiveCell = id === this.ACTIVE_SORT_FIELD;
+                const isActiveCell = id === this.activeSortField;
                 const dataOrder = sortable ? 'data-order="asc"' : '';
 
                 return isActiveCell ?
-                    `<div class="sortable-table__cell" data-id="${id}" data-sortable="true" data-order="${this.ACTIVE_SORT_ORDER}">
+                    `<div class="sortable-table__cell" data-id="${id}" data-sortable="true" data-order="${this.activeSortOrder}">
                         <span>${title}</span>
                         <span data-element="arrow" class="sortable-table__sort-arrow">
                             <span class="sort-arrow"></span>
@@ -163,22 +164,13 @@ export default class SortableTable {
     }
 
     sortAndRender(field, order) {
-        const sortType = this.getSortType(field);
+        const compareFunction = this.getCompareFunction(field, order);
+        if (!compareFunction) return;
 
-        if (!sortType) {
-            throw new Error(
-                `Неправильный тип для сортировки - "${field}", возможные значения - "${this.getHeaderIds()}"
-            `);
-        }
+        this.activeSortField = field;
+        this.activeSortOrder = order;
 
-        this.ACTIVE_SORT_FIELD = field;
-        this.ACTIVE_SORT_ORDER = order;
-
-        const compareFn = this.getCompareFunction(sortType, { field, order });
-
-        if (!compareFn) return;
-
-        const sortedData = [...this.data].sort(compareFn);
+        const sortedData = [...this.data].sort(compareFunction);
 
         this.data = sortedData;
 
@@ -192,7 +184,7 @@ export default class SortableTable {
         if (
             !sortedCol ||
             !sortedCol.sortable
-        ) return null;
+        ) return 'desc';
 
         return sortedCol.sortType;
     }
@@ -201,15 +193,19 @@ export default class SortableTable {
         return this.header.map(row => row.id).join(', ');
     }
 
-    compareNumbersFn(a, b) {
-        return a - b;
-    }
-
     compareStringsFn(a, b) {
         return a.localeCompare(b, ['ru', 'en'], { caseFirst: 'upper' });
     }
 
-    getCompareFunction(sortType, { field, order = 'asc' }) {
+    getCompareFunction(field, order = 'asc') {
+        const sortType = this.getSortType(field);
+
+        if (!sortType) {
+            throw new Error(
+                `Неправильный тип для сортировки - "${field}", возможные значения - "${this.getHeaderIds()}"
+            `);
+        }
+
         const direction = {
             asc: 1,
             desc: -1
@@ -220,7 +216,7 @@ export default class SortableTable {
                 return (a, b) => direction * this.compareStringsFn(a[field], b[field]);
 
             case 'number':
-                return (a, b) => direction * this.compareNumbersFn(a[field], b[field]);
+                return (a, b) => direction * (a[field] - b[field]);
 
             default:
                 console.error('Пока умеем сортировать только строки и числа');

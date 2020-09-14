@@ -1,7 +1,7 @@
 class Tooltip {
     element;
 
-    TOOLTIP_OFFSET = 10; // отступы в пикселях от курсора мыши до тултипа
+    tooltipOffset = 10; // отступы в пикселях от курсора мыши до тултипа
 
     constructor() {
         this.onPointerOver = this.onPointerOver.bind(this);
@@ -11,7 +11,6 @@ class Tooltip {
 
     initEventListeners() {
         document.addEventListener('pointerover', this.onPointerOver);
-        document.addEventListener('pointermove', this.onPointerMove);
         document.addEventListener('pointerout', this.onPointerOut);
     }
 
@@ -20,19 +19,23 @@ class Tooltip {
 
         if (!tooltipElement) return;
 
+        document.addEventListener('pointermove', this.onPointerMove);
+
         const options = this.getTooltipCoords(event.clientX, event.clientY);
 
         this.render(tooltipElement.dataset.tooltip, options);
     }
 
     onPointerOut() {
+        document.removeEventListener('pointermove', this.onPointerMove);
+
         this.remove();
     }
 
     getTooltipCoords(clientX, clientY) {
         return {
-            left: clientX + this.TOOLTIP_OFFSET + 'px',
-            top: clientY + this.TOOLTIP_OFFSET + 'px'
+            left: clientX + this.tooltipOffset + 'px',
+            top: clientY + this.tooltipOffset + 'px'
         };
     }
 
