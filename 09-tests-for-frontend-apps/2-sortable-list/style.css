@@ -107,6 +107,7 @@ body {
 
 .sortable-list__placeholder {
   border: 1px solid var(--blue);
-  margin: 3px 0;
+  margin: 16px 0;
   border-radius: 4px;
+  box-sizing: border-box;
 }
