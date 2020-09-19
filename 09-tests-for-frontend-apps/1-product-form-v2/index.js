@@ -1,6 +1,7 @@
 import escapeHtml from './utils/escape-html.js';
 import fetchJson from './utils/fetch-json.js';
-import ImageUploader from './utils/image-uploader.js';
+import ImageUploader from '../../08-forms-fetch-api-part-2/1-product-form-v1/utils/image-uploader.js';
+import SortableList from '../2-sortable-list/index.js';
 
 const BACKEND_URL = 'https://course-js.javascript.ru';
 
@@ -119,15 +120,11 @@ export default class ProductForm {
   }
 
   getImagesTemplate() {
-    const images = this.getImageItemsTemplate();
-
     return `
       <div class="form-group form-group__wide" data-element="sortable-list-container">
         <label class="form-label">Фото</label>
         <div data-element="imageListContainer">
-          <ul data-element="imageList" class="sortable-list">
-            ${images}
-          </ul>
+          <ul data-element="imageList" class="sortable-list"></ul>
         </div>
         <button data-element="uploadImage" type="button" name="uploadImage" class="button-primary-outline">
           <span>Загрузить</span>
@@ -138,8 +135,11 @@ export default class ProductForm {
 
   getImageItemsTemplate() {
     return this.product.images
-      .map(({ url, source }) => this.getImageItemTemplate({ url, source }))
-      .join('');
+      .map(({ url, source }) =>
+        this.getHTMLNodeFromTemplate(
+          this.getImageItemTemplate({ url, source })
+        )
+      );
   }
 
   getImageItemTemplate({ url, source }) {
@@ -354,10 +354,10 @@ export default class ProductForm {
     const [image] = event.target.files;
 
     if (!image) return;
-    
+
     const uploader = new ImageUploader();
     const response = await uploader.upload(image);
-
+    
     if (!response || !response.success) return;
     
     this.addImageItemField({
@@ -376,30 +376,16 @@ export default class ProductForm {
 
   addEventListeners() {
     this.subElements.productForm.addEventListener('submit', this.onFormSubmit);
-    this.subElements.imageListContainer.addEventListener('pointerdown', this.onImageListItemClick);
 
     this.subElements.uploadImage.addEventListener('pointerdown', this.onUploadImage);
   }
 
   removeEventListeners() {
     this.subElements.productForm.removeEventListener('submit', this.onFormSubmit);
-    this.subElements.imageListContainer.removeEventListener('pointerdown', this.onImageListItemClick);
 
     this.subElements.uploadImage.removeEventListener('pointerdown', this.onUploadImage);
 
     this.subElements.fileInput?.removeEventListener('change', this.onFileInputChange);
-  }
-
-  onImageListItemClick = event => {
-    const deleteHandler = event.target.closest('[data-delete-handle]');
-
-    if (!deleteHandler) return;
-
-    const listItem = event.target.closest('li');
-
-    if (!listItem) return;
-
-    listItem.remove();
   }
 
   getImagesFromFormFields() {
@@ -484,6 +470,14 @@ export default class ProductForm {
     this.element?.remove();
   }
 
+  addSortableContainer() {
+    const sortableList = new SortableList({
+      items: this.getImageItemsTemplate()
+    });
+
+    this.subElements.imageList.append(sortableList.element);
+  }
+
   async render() {
     const element = this.getHTMLNodeFromTemplate(await this.getTemplate());
     const subElements = this.getSubElements(element);
@@ -492,6 +486,8 @@ export default class ProductForm {
     this.subElements = subElements;
 
     this.addEventListeners();
+
+    this.addSortableContainer();
 
     return this.element;
   }
