@@ -119,6 +119,7 @@ export default class Page {
         this.components.ordersChart.update(from, to);
         this.components.salesChart.update(from, to);
         this.components.customersChart.update(from, to);
+        this.components.sortableTable.update({ from, to });
     }
 
     addEventListeners() {
